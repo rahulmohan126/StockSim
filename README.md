@@ -8,8 +8,10 @@ Date collected from Yahoo Finance through the yFinance module.
 
 ## Todo
 
-1. Implement history and acitivity
-2. Add stop/limit website
+1. Implement history and activity. (v1.1)
+2. General bug fixes and beautification of web pages. (v1.1)
+3. Add stop/limit options to buying/selling (v1.2)
+4. Orders item in nav bar for curren open orders (v1.2)
 
 ## Installation
 
