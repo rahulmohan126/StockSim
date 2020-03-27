@@ -1,0 +1,487 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block scripts %}
+
+<!-- Page level plugins -->
+<script src="static/vendor/datatables/jquery.dataTables.min.js"></script>
+<script src="static/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+<!-- Page level custom scripts -->
+<!-- <script src="static/js/demo/datatables-demo.js"></script> -->
+<!-- <script src="static/js/demo/chart-area-demo.js"></script> -->
+<!-- <script src="static/js/demo/chart-pie-demo.js"></script> -->
+
+{% endblock %}
+
+{% block content %}
+
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+	<h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+
+	<!-- Value -->
+	<div class="col-xl-3 col-md-6 mb-4">
+		<div class="card border-left-primary shadow h-100 py-2">
+			<div class="card-body">
+				<div class="row no-gutters align-items-center">
+					<div class="col mr-2">
+						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+							Portfolio Value</div>
+						<div class="h5 mb-0 font-weight-bold text-gray-800">${{ format.number(portfolio['value']) }}
+						</div>
+						<div class="h7 mb-0 font-weight-bold text-white">.</div>
+					</div>
+					<div class="col-auto">
+						<i class="fas fa-database fa-2x text-gray-300"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Net Gain -->
+	<div class="col-xl-3 col-md-6 mb-4">
+		<div class="card border-left-primary shadow h-100 py-2">
+			<div class="card-body">
+				<div class="row no-gutters align-items-center">
+					<div class="col mr-2">
+						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Net
+							gain</div>
+						<div class="h5 mb-0 font-weight-bold text-{{ format.color(portfolio['netGain']) }}">
+							{{ format.sign(portfolio['netGain']) }}${{ format.abs(portfolio['netGain']) }}</div>
+						<div class="h7 mb-0 font-weight-bold text-{{ format.color(portfolio['netGainPercentage']) }}">
+							{{ format.sign(portfolio['netGainPercentage']) }}{{ format.abs(portfolio['netGainPercentage']) }}%
+						</div>
+					</div>
+					<div class="col-auto">
+						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Day Gain -->
+	<div class="col-xl-2 col-md-6 mb-4">
+		<div class="card border-left-primary shadow h-100 py-2">
+			<div class="card-body">
+				<div class="row no-gutters align-items-center">
+					<div class="col mr-2">
+						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Day
+							gain</div>
+						<div class="h5 mb-0 font-weight-bold text-{{ format.color(portfolio['dayGain']) }}">
+							{{ format.sign(portfolio['dayGain']) }}${{ format.number(portfolio['dayGain']) }}</div>
+						<div class="h7 mb-0 font-weight-bold text-{{ format.color(portfolio['dayGainPercentage']) }}">
+							{{ format.sign(portfolio['dayGainPercentage']) }}{{ format.number(portfolio['dayGainPercentage']) }}%
+						</div>
+					</div>
+					<div class="col-auto">
+						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Cost -->
+	<div class="col-xl-2 col-md-6 mb-4">
+		<div class="card border-left-primary shadow h-100 py-2">
+			<div class="card-body">
+				<div class="row no-gutters align-items-center">
+					<div class="col mr-2">
+						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Cost</div>
+						<div class="h5 mb-0 font-weight-bold text-gray-800">
+							${{ format.number(user.data.portfolio.cost) }}</div>
+						<div class="h7 mb-0 font-weight-bold text-white">.</div>
+					</div>
+					<div class="col-auto">
+						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Cash -->
+	<div class="col-xl-2 col-md-6 mb-4">
+		<div class="card border-left-primary shadow h-100 py-2">
+			<div class="card-body">
+				<div class="row no-gutters align-items-center">
+					<div class="col mr-2">
+						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Cash</div>
+						<div class="h5 mb-0 font-weight-bold text-gray-800">
+							${{ format.number(user.data.portfolio.cash) }}</div>
+						<div class="h7 mb-0 font-weight-bold text-white">.</div>
+					</div>
+					<div class="col-auto">
+						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Content Row -->
+
+<div class="row">
+	<!-- Growth Chart -->
+	<div class="col-xl-8 col-lg-7">
+		<div class="card shadow mb-4">
+			<!-- Card Header - Dropdown -->
+			<div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+				<h6 class="m-0 font-weight-bold text-primary">Portfolio Growth</h6>
+				<div class="dropdown no-arrow">
+					<a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown"
+						aria-haspopup="true" aria-expanded="false">
+						<i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+					</a>
+					<div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+						aria-labelledby="dropdownMenuLink">
+						<div class="dropdown-header">Scope:</div>
+						<a class="dropdown-item" href="#">Year</a>
+						<a class="dropdown-item" href="#">Month</a>
+						<a class="dropdown-item" href="#">Week</a>
+					</div>
+				</div>
+			</div>
+			<!-- Card Body -->
+			<div class="card-body">
+				<div class="chart-area">
+					<canvas id="myAreaChart"></canvas>
+				</div>
+			</div>
+			<script src="static/vendor/chart.js/Chart.min.js"></script>
+			<script>
+				// Set new default font family and font color to mimic Bootstrap's default styling
+				Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+				Chart.defaults.global.defaultFontColor = '#858796';
+
+				function number_format(number, decimals, dec_point, thousands_sep) {
+					// *     example: number_format(1234.56, 2, ',', ' ');
+					// *     return: '1 234,56'
+					number = (number + '').replace(',', '').replace(' ', '');
+					var n = !isFinite(+number) ? 0 : +number,
+						prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+						sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+						dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+						s = '',
+						toFixedFix = function (n, prec) {
+							var k = Math.pow(10, prec);
+							return '' + Math.round(n * k) / k;
+						};
+					// Fix for IE parseFloat(0.55).toFixed(0) = 0;
+					s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+					if (s[0].length > 3) {
+						s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+					}
+					if ((s[1] || '').length < prec) {
+						s[1] = s[1] || '';
+						s[1] += new Array(prec - s[1].length + 1).join('0');
+					}
+					return s.join(dec);
+				}
+
+				var getLabels = function () {
+					let shiftedValues = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+					const target = shiftedValues[new Date().getMonth()];
+
+					while (shiftedValues[11] !== target) {
+						shiftedValues.push(shiftedValues.shift());
+					}
+
+					return shiftedValues;
+				}
+
+				// Area Chart Example
+				var ctx = document.getElementById("myAreaChart");
+				var myLineChart = new Chart(ctx, {
+					type: 'line',
+					data: {
+						labels: getLabels(),
+						datasets: [{
+							label: "Value",
+							lineTension: 0.3,
+							backgroundColor: "rgba(78, 115, 223, 0.05)",
+							borderColor: "rgba(78, 115, 223, 1)",
+							pointRadius: 3,
+							pointBackgroundColor: "rgba(78, 115, 223, 1)",
+							pointBorderColor: "rgba(78, 115, 223, 1)",
+							pointHoverRadius: 3,
+							pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+							pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+							pointHitRadius: 10,
+							pointBorderWidth: 2,
+							data: [{% for i in range(len(user['data']['history']['portfolioValue']) - 12, len(user['data']['history']['portfolioValue'])) %} {% if i < 0 %}, {% else %} {{ user['data']['history']['portfolioValue'][i] }}, {% endif %}{% endfor %}],
+						}],
+					},
+				options: {
+					maintainAspectRatio: false,
+						layout: {
+						padding: {
+							left: 10,
+								right: 25,
+									top: 25,
+										bottom: 0
+						}
+					},
+					scales: {
+						xAxes: [{
+							time: {
+								unit: 'date'
+							},
+							gridLines: {
+								display: false,
+								drawBorder: false
+							},
+							ticks: {
+								maxTicksLimit: 7
+							}
+						}],
+							yAxes: [{
+								ticks: {
+									maxTicksLimit: 5,
+									padding: 10,
+									// Include a dollar sign in the ticks
+									callback: function (value, index, values) {
+										return '$' + number_format(value);
+									}
+								},
+								gridLines: {
+									color: "rgb(234, 236, 244)",
+									zeroLineColor: "rgb(234, 236, 244)",
+									drawBorder: false,
+									borderDash: [2],
+									zeroLineBorderDash: [2]
+								}
+							}],
+						},
+					legend: {
+						display: false
+					},
+					tooltips: {
+						backgroundColor: "rgb(255,255,255)",
+							bodyFontColor: "#858796",
+								titleMarginBottom: 10,
+									titleFontColor: '#6e707e',
+										titleFontSize: 14,
+											borderColor: '#dddfeb',
+												borderWidth: 1,
+													xPadding: 15,
+														yPadding: 15,
+															displayColors: false,
+																intersect: false,
+																	mode: 'index',
+																		caretPadding: 10,
+																			callbacks: {
+							label: function (tooltipItem, chart) {
+								var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
+								return datasetLabel + ': $' + number_format(tooltipItem.yLabel);
+							}
+						}
+					}
+				}
+				});
+			</script>
+		</div>
+	</div>
+
+	<!-- Stock Distribution -->
+	<div class="col-xl-4 col-lg-5">
+		<div class="card shadow mb-4">
+			<!-- Card Header - Dropdown -->
+			<div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+				<h6 class="m-0 font-weight-bold text-primary">Stock Distribution</h6>
+				<div class="dropdown no-arrow">
+					<a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown"
+						aria-haspopup="true" aria-expanded="false">
+						<i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+					</a>
+					<div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+						aria-labelledby="dropdownMenuLink">
+						<div class="dropdown-header">Type:</div>
+						<a class="dropdown-item" href="#">By Ticker</a>
+						<a class="dropdown-item" href="#">By Sector</a>
+					</div>
+				</div>
+			</div>
+			<!-- Card Body -->
+			<div class="card-body">
+				<div class="chart-pie pt-4 pb-2">
+					<canvas id="myPieChart"></canvas>
+				</div>
+				<div class="mt-4 text-center small">
+					<span class="mr-2">
+					</span>
+				</div>
+				<script>
+					Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+					Chart.defaults.global.defaultFontColor = '#858796';
+
+					var ctx = document.getElementById("myPieChart");
+					var myPieChart = new Chart(ctx, {
+						type: 'doughnut',
+						data: {
+							labels: [{% for stock in portfolio['stocks'] %} "{{ stock['ticker']}}", {% endfor %}],
+					datasets: [{
+						data: [{% for stock in portfolio['stocks'] %} {{ stock['totalStake']}}, {% endfor %}],
+						backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#293910'],
+							hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf'],
+								hoverBorderColor: "rgba(234, 236, 244, 1)",
+							}],
+						},
+					options: {
+						maintainAspectRatio: false,
+							tooltips: {
+							backgroundColor: "rgb(255,255,255)",
+								bodyFontColor: "#858796",
+									borderColor: '#dddfeb',
+										borderWidth: 1,
+											xPadding: 15,
+												yPadding: 15,
+													displayColors: false,
+														caretPadding: 10,
+							},
+						legend: {
+							display: false
+						},
+						cutoutPercentage: 80,
+						},
+					});
+				</script>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+
+	<!-- Stock Table -->
+	<div class="col-xl-12 col-xl-6">
+		<div class="card shadow mb-4">
+			<div class="card-header py-3">
+				<div>
+					<h6 style="display: inline" class="m-0 font-weight-bold text-primary">Stocks Data</h6>
+					<button style="display: inline;"
+						class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm float-right" id="toggle">Show
+						Lots</button>
+				</div>
+			</div>
+			<div class="card-body">
+				<hr>
+				<style>
+					.dataTables_filter {
+						display: none;
+					}
+				</style>
+				<div class="table-responsive">
+					<table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+						<thead>
+							<tr>
+								<th>SYMBOL</th>
+								<th>SHARES</th>
+								<th>PRICE</th>
+								<th>CHANGE</th>
+								<th>NET GAIN</th>
+								<th>1D GAIN</th>
+								<th>OPEN</th>
+								<th>CLOSE</th>
+								<th>VOLUME</th>
+								<th>MARKET CAP</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for stock in portfolio['stocks'] %}
+							<tr>
+								<td><b>{{ stock['ticker'] }}</b></td>
+								<td>{{ format.number(stock['totalStake']) }}</td>
+								<td>${{ format.number(stock['price']) }}</td>
+								<td class="text-{{ format.color(stock['change']) }}">{{ format.sign(stock['change']) }}${{ format.number(stock['change']) }} ({{ format.sign(stock['changePercentage']) }}{{ format.number(stock['changePercentage']) }}%)</td>
+								<td class="text-{{ format.color(stock['netGain']) }}">{{ format.sign(stock['netGain']) }}${{ format.number(stock['netGain']) }} ({{ format.sign(stock['netGainPercentage']) }}{{ format.number(stock['netGainPercentage']) }}%)</td>
+								<td class="text-{{ format.color(stock['dayGain']) }}">{{ format.sign(stock['dayGain']) }}${{ format.number(stock['dayGain']) }} ({{ format.sign(stock['dayGainPercentage']) }}{{ format.number(stock['dayGainPercentage']) }}%)</td>
+								<td>${{ format.number(stock['open']) }}</td>
+								<td>${{ format.number(stock['close']) }}</td>
+								<td>{{ format.number(stock['volume']) }}</td>
+								<td>${{ format.number(stock['marketCap']) }}</td>
+							</tr>
+
+							{% for lot in stock['lots'] %}
+							<tr>
+								<td>{{ format.time(lot['time']) }}</td>
+								<td>{{ format.sign(lot['shares']) }}{{ format.number(lot['shares']) }}</td>
+								<td>${{ format.number(lot['price']) }}</td>
+								<td>-</td>
+								<td class="text-{{ format.color(lot['netGain']) }}">{{ format.sign(lot['netGain']) }}${{ format.number(lot['netGain']) }}</td>
+								<td class="text-{{ format.color(lot['dayGain']) }}">{{ format.sign(lot['dayGain']) }}${{ format.number(lot['dayGain']) }}</td>
+								<td>-</td>
+								<td>-</td>
+								<td>-</td>
+								<td>-</td>
+							</tr>
+							{% endfor %}
+							{% endfor%}
+						</tbody>
+					</table>
+				</div>
+				<style>
+				</style>
+				<script>
+					$(document).ready(function () {
+						var table = $('#dataTable').DataTable({
+							"bSort": false,
+							"bInfo": false,
+							"bPaginate": false,
+							"searching": true,
+							"columnDefs": [
+							],
+						});
+
+						var toggle = false;
+
+						var toggleFunc = function () {
+							toggle = !toggle;
+
+							$.fn.dataTable.ext.search.push(
+								function (settings, data, dataIndex) {
+									if (!toggle) return true;
+									else {
+										let x = table.cell(dataIndex, 0).data()[0];
+										let y = isNaN(x);
+										return isNaN(table.cell(dataIndex, 0).data()[0]);
+									}
+								}
+							);
+							table.draw();
+						}
+
+						toggleFunc();
+
+						$("#toggle").click(function () {
+							if (!toggle) this.innerHTML = 'Show Lots';
+							else this.innerHTML = 'Hide Lots';
+
+							toggleFunc();
+						});
+					});
+				</script>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+	<span></span>
+	<a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" download>
+		<span class="fas fa-download fa-sm text-white-50"></span>
+		Get JSON data
+	</a>
+</div>
+
+{% endblock %}
