@@ -35,7 +35,7 @@
 							Portfolio Value</div>
 						<div class="h5 mb-0 font-weight-bold text-gray-800">${{ format.number(portfolio['value']) }}
 						</div>
-						<div class="h7 mb-0 font-weight-bold text-white">.</div>
+						<div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>
 					</div>
 					<div class="col-auto">
 						<i class="fas fa-database fa-2x text-gray-300"></i>
@@ -54,13 +54,13 @@
 						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Net
 							gain</div>
 						<div class="h5 mb-0 font-weight-bold text-{{ format.color(portfolio['netGain']) }}">
-							{{ format.sign(portfolio['netGain']) }}${{ format.abs(portfolio['netGain']) }}</div>
+							{{ format.sign(portfolio['netGain']) }}${{ format.number(portfolio['netGain']) }}</div>
 						<div class="h7 mb-0 font-weight-bold text-{{ format.color(portfolio['netGainPercentage']) }}">
-							{{ format.sign(portfolio['netGainPercentage']) }}{{ format.abs(portfolio['netGainPercentage']) }}%
+							{{ format.sign(portfolio['netGainPercentage']) }}{{ format.number(portfolio['netGainPercentage']) }}%
 						</div>
 					</div>
 					<div class="col-auto">
-						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+						<i class="fas fa-chart-line fa-2x text-gray-300"></i>
 					</div>
 				</div>
 			</div>
@@ -82,7 +82,7 @@
 						</div>
 					</div>
 					<div class="col-auto">
-						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+						<i class="fas fa-calendar-day fa-2x text-gray-300"></i>
 					</div>
 				</div>
 			</div>
@@ -98,7 +98,7 @@
 						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Cost</div>
 						<div class="h5 mb-0 font-weight-bold text-gray-800">
 							${{ format.number(user.data.portfolio.cost) }}</div>
-						<div class="h7 mb-0 font-weight-bold text-white">.</div>
+						<div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>
 					</div>
 					<div class="col-auto">
 						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -117,10 +117,10 @@
 						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Cash</div>
 						<div class="h5 mb-0 font-weight-bold text-gray-800">
 							${{ format.number(user.data.portfolio.cash) }}</div>
-						<div class="h7 mb-0 font-weight-bold text-white">.</div>
+						<div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>
 					</div>
 					<div class="col-auto">
-						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+						<i class="fas fa-money-bill fa-2x text-gray-300"></i>
 					</div>
 				</div>
 			</div>
@@ -218,7 +218,7 @@
 							pointHoverBorderColor: "rgba(78, 115, 223, 1)",
 							pointHitRadius: 10,
 							pointBorderWidth: 2,
-							data: [{% for i in range(len(user['data']['history']['portfolioValue']) - 12, len(user['data']['history']['portfolioValue'])) %} {% if i < 0 %}, {% else %} {{ user['data']['history']['portfolioValue'][i] }}, {% endif %}{% endfor %}],
+							data: [{% for i in range(len(user.data.history.portfolioValue) - 12, len(user.data.history.portfolioValue)) %} {% if i < 0 %}, {% else %} { { user['data']['history']['portfolioValue'][i] } }, {% endif %} {% endfor %}],
 						}],
 					},
 				options: {
@@ -324,15 +324,22 @@
 					Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
 					Chart.defaults.global.defaultFontColor = '#858796';
 
-					var ctx = document.getElementById("myPieChart");
-					var myPieChart = new Chart(ctx, {
+					var canvas = document.getElementById("myPieChart");
+					var ctx = canvas.getContext('2d');
+
+					var gradient = ctx.createLinearGradient(0, 0, 600, 0);
+
+					gradient.addColorStop(0, '#8360c3');
+					gradient.addColorStop(1, '#2ebf91');
+
+					var myPieChart = new Chart(canvas, {
 						type: 'doughnut',
 						data: {
 							labels: [{% for stock in portfolio['stocks'] %} "{{ stock['ticker']}}", {% endfor %}],
-					datasets: [{
-						data: [{% for stock in portfolio['stocks'] %} {{ stock['totalStake']}}, {% endfor %}],
-						backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#293910'],
-							hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf'],
+							datasets: [{
+								data: [{% for stock in portfolio['stocks'] %} {{ stock['totalStake']}}, {% endfor %}],
+								backgroundColor: gradient,
+								hoverBackgroundColor: gradient,
 								hoverBorderColor: "rgba(234, 236, 244, 1)",
 							}],
 						},
@@ -403,9 +410,18 @@
 								<td><b>{{ stock['ticker'] }}</b></td>
 								<td>{{ format.number(stock['totalStake']) }}</td>
 								<td>${{ format.number(stock['price']) }}</td>
-								<td class="text-{{ format.color(stock['change']) }}">{{ format.sign(stock['change']) }}${{ format.number(stock['change']) }} ({{ format.sign(stock['changePercentage']) }}{{ format.number(stock['changePercentage']) }}%)</td>
-								<td class="text-{{ format.color(stock['netGain']) }}">{{ format.sign(stock['netGain']) }}${{ format.number(stock['netGain']) }} ({{ format.sign(stock['netGainPercentage']) }}{{ format.number(stock['netGainPercentage']) }}%)</td>
-								<td class="text-{{ format.color(stock['dayGain']) }}">{{ format.sign(stock['dayGain']) }}${{ format.number(stock['dayGain']) }} ({{ format.sign(stock['dayGainPercentage']) }}{{ format.number(stock['dayGainPercentage']) }}%)</td>
+								<td class="text-{{ format.color(stock['change']) }}">
+									{{ format.sign(stock['change']) }}${{ format.number(stock['change']) }}
+									({{ format.sign(stock['changePercentage']) }}{{ format.number(stock['changePercentage']) }}%)
+								</td>
+								<td class="text-{{ format.color(stock['netGain']) }}">
+									{{ format.sign(stock['netGain']) }}${{ format.number(stock['netGain']) }}
+									({{ format.sign(stock['netGainPercentage']) }}{{ format.number(stock['netGainPercentage']) }}%)
+								</td>
+								<td class="text-{{ format.color(stock['dayGain']) }}">
+									{{ format.sign(stock['dayGain']) }}${{ format.number(stock['dayGain']) }}
+									({{ format.sign(stock['dayGainPercentage']) }}{{ format.number(stock['dayGainPercentage']) }}%)
+								</td>
 								<td>${{ format.number(stock['open']) }}</td>
 								<td>${{ format.number(stock['close']) }}</td>
 								<td>{{ format.number(stock['volume']) }}</td>
@@ -418,8 +434,10 @@
 								<td>{{ format.sign(lot['shares']) }}{{ format.number(lot['shares']) }}</td>
 								<td>${{ format.number(lot['price']) }}</td>
 								<td>-</td>
-								<td class="text-{{ format.color(lot['netGain']) }}">{{ format.sign(lot['netGain']) }}${{ format.number(lot['netGain']) }}</td>
-								<td class="text-{{ format.color(lot['dayGain']) }}">{{ format.sign(lot['dayGain']) }}${{ format.number(lot['dayGain']) }}</td>
+								<td class="text-{{ format.color(lot['netGain']) }}">
+									{{ format.sign(lot['netGain']) }}${{ format.number(lot['netGain']) }}</td>
+								<td class="text-{{ format.color(lot['dayGain']) }}">
+									{{ format.sign(lot['dayGain']) }}${{ format.number(lot['dayGain']) }}</td>
 								<td>-</td>
 								<td>-</td>
 								<td>-</td>

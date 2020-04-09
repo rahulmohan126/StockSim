@@ -1,6 +1,6 @@
 from structures import *
 from os import urandom
-import flask, math, time, json
+import flask, math, json
 
 database = Database()
 cache = Cache()
@@ -25,20 +25,20 @@ def addUserToSession(userRow) -> None:
 
 	if 'blank' in userRow[3]:
 		TEMPLATE = {
-			"id":userRow[0],
-			"username":userRow[1],
-			"password":userRow[2],
-			"data":{
-				"portfolio":{
-					"value":50000,
-					"cash":50000,
-					"cost":0,
-					"orders":[],
-					"stocks":{}
+			"id": userRow[0],
+			"username": userRow[1],
+			"password": userRow[2],
+			"data": {
+				"portfolio": {
+					"value": 50000,
+					"cash": 50000,
+					"cost": 0,
+					"orders": [],
+					"stocks": {}
 				},
-				"history":{
-					"portfolioValue":[],
-					"activity":[]
+				"history": {
+					"portfolioValue": [],
+					"activity": []
 				}
 			}
 		}
@@ -72,9 +72,14 @@ def validTicker(ticker: str) -> bool:
 
 @app.errorhandler(404)
 def error404(e):
-	return flask.render_template('404.html', user={
-		'username':'?'
-	})
+	user = None
+	if 'user' in flask.session:
+		user = User(flask.session['user'])
+	else:
+		user = User()
+	
+	return flask.render_template('404.html', user=user, format=Format)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -127,11 +132,7 @@ def dashboard():
 
 	if flask.request.method == 'GET':
 		user = User(flask.session['user'])
-		portfolioData, saveNeeded = user.data.portfolio.getDataWithCalculations(cache)
-
-		if saveNeeded:
-			flask.session['user'] = user.getData()
-			database.saveUser(user.id, flask.session['user'])
+		portfolioData = user.data.portfolio.getDataWithCalculations(cache)
 
 		return flask.render_template('dashboard.html',
 									 user=user,
@@ -155,38 +156,44 @@ def stock():
 
 		data = cache.get(flask.request.args['ticker'])
 		data.refresh()
-		chart = yearData(flask.request.args['ticker'])
+		chartData = data.getChartData('y')
 		user = User(flask.session['user'])
-		limits = user.data.portfolio.getLimits(flask.request.args['ticker'], data.info['regularMarketPrice'])
+		limits = user.data.portfolio.getLimits(flask.request.args['ticker'],
+											   data.info['regularMarketPrice'])
 
 		return flask.render_template('stock.html',
 									 user=user,
 									 ticker=data.info['symbol'],
 									 data=data.info,
-									 testData=chart,
+									 chartData=chartData,
 									 limits=limits,
 									 format=Format)
 	elif 'searchTicker' in flask.request.form:
 		return flask.redirect(
 			flask.url_for('stock', ticker=flask.request.form['searchTicker']))
 	else:
+		# The buy/sell could not be executed because of insufficient funds or becuase none of that stock is owned (respectively)
 		if int(flask.request.form['amount']) == 0:
-			return flask.redirect(flask.url_for('stock', ticker=flask.request.args['ticker']))
-
-		# Pass price, ticker, and type from GET to POST (through readonly invisible forms or session?)
-		price = cache.get(flask.request.args['ticker'].upper()).info['regularMarketPrice']
+			return flask.redirect(
+				flask.url_for('stock', ticker=flask.request.args['ticker']))
 		ticker = flask.request.args['ticker'].upper()
 		action = flask.request.form['action']
+		price = cache.get(ticker).info['regularMarketPrice']
+		amount = int(flask.request.form['amount'])
 		user = User(flask.session['user'])
 
+		user.data.history.addLotEvent(action, ticker, amount, price)
+
 		if action == 'BUY':
-			user.data.portfolio.buy(ticker, int(flask.request.form['amount']), price)
+			user.data.portfolio.buy(ticker, amount, price)
 		else:
-			user.data.portfolio.sell(ticker, int(flask.request.form['amount']), price)
+			user.data.portfolio.sell(ticker, amount, price)
 
 		flask.session['user'] = user.getData()
 		database.saveUser(user.id, flask.session['user'])
 
-		return flask.redirect(flask.url_for('stock', ticker=flask.request.args['ticker']))
+		return flask.redirect(
+			flask.url_for('stock', ticker=flask.request.args['ticker']))
+
 
 app.run(debug=True)

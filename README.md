@@ -2,16 +2,24 @@
 
 ## About
 
-This web "game" built with Flask starts the user off $50,000, and allows the user to buy and sell real stocks at real prices, allowing you experience trading without financial risk.
+This web "game" built with Flask starts the user off $50,000, and allows the user to buy and sell real stocks at real prices, allowing you experience stock trading without the financial risk.
 
 Date collected from Yahoo Finance through the yFinance module.
 
+**WARNING:** Any changes made to data structure attributes will render any current user data unusable. There is no migration system so all JSON data will need to be updated to the current system by hand in order to become usable.
+
 ## Todo
 
-1. Implement history and activity. (v1.1)
-2. General bug fixes and beautification of web pages. (v1.1)
-3. Add stop/limit options to buying/selling (v1.2)
-4. Orders item in nav bar for curren open orders (v1.2)
+1. *Implement history and activity. (v1.1) --- DONE*
+2. *General bug fixes, improvements, and beautification of web pages. (v1.1) --- DONE*
+3. *Time series chart (v1.v1) --- DONE*
+4. Enable logout button (same result can be achieved by closing browser but just for convenience) (v1.2)
+5. Enable "Get JSON data" button (export your data) (v1.2)
+6. Add stop/limit options to buying/selling (v1.2)
+7. Orders item in nav bar for current open orders (v1.2)
+8. Dark mode (v1.3)
+9. Enable all dropdown menu options (stock growth, portfolio growth, and stock distribution) (v1.3)
+10. Global leaderboard (v1.3)
 
 ## Installation
 
@@ -75,6 +83,7 @@ First, create a settings.py file in the uppermost directory of the project. In t
 ```py
 PASSWORD = 'your mysql password here'
 DATABASE = 'your database name'
+STARTING_VALUE = 50_0000 # This is the amount of cash users have when they start the game
 ```
 
 ## Execution

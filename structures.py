@@ -60,17 +60,33 @@ class History:
 
 		if data is not None:
 			self.setData(data)
+	
+	def addPortfolioValue(self, currentTime, currentValue):
+		self.portfolioValue.append(ActivityEvent({
+			'time': currentTime,
+			'value': currentValue
+		}))
+
+	def addLotEvent(self, lotType, ticker, amount, price):
+		self.activity.append(ActivityEvent({
+			'time': time.time(),
+			'value': f'{lotType}: {amount} shares of {ticker} at ${price}'
+		}))
 
 	def getData(self) -> str:
 		data = {
-			'portfolioValue': self.portfolioValue,  # Add time to value history
+			'portfolioValue': [x.getData() for x in self.portfolioValue],  # Add time to value history
 			'activity': [x.getData() for x in self.activity]
 		}
 
 		return data
 
 	def setData(self, data: dict) -> None:
-		self.portfolioValue = data['portfolioValue']
+		self.portfolioValue = [
+			ActivityEvent(data['portfolioValue'][i])
+			for i in range(len(data['portfolioValue']))
+		]
+
 		self.activity = [
 			ActivityEvent(data['activity'][i])
 			for i in range(len(data['activity']))
@@ -79,19 +95,26 @@ class History:
 
 class Portfolio:
 	def __init__(self, data: dict = None):
-		self.value = 50_000
-		self.cash = 50_000 # Intial cash balance and therefore value
+		self.cash = STARTING_VALUE  # Intial cash balance and therefore value
+		self.value = self.cash
 		self.cost = 0
 		self.orders = []
 		self.stocks = {}
 
 		if data is not None:
 			self.setData(data)
-
-	def buy(self, ticker: str, amount: int, price : float) -> None:
+	
+	def calculateValue(self, stocksData : dict) -> None:
+		newValue = self.cash
+		for stock in stocksData:
+			newValue += stock['price'] * stock['totalStake']
+		
+		self.value = newValue
+	
+	def buy(self, ticker: str, amount: int, price: float) -> None:
 		self.cash -= amount * price
 		self.cost += amount * price
-		
+
 		if ticker not in self.stocks:
 			self.stocks[ticker] = Stock({
 				'ticker': ticker,
@@ -99,50 +122,41 @@ class Portfolio:
 				'costBasis': amount * price,
 				'lots': []
 			})
-		
-		self.stocks[ticker].addLot(Lot({
-			'shares': amount,
-			'price': price,
-			'time': time.time()
-		}))
 
-	def sell(self, ticker: str, amount: int, price : float) -> None:
+		self.stocks[ticker].addLot(
+			Lot({
+				'shares': amount,
+				'price': price,
+				'time': time.time()
+			}))
+
+	def sell(self, ticker: str, amount: int, price: float) -> None:
 		self.cash += amount * price
 		self.cost -= amount * price
-		
-		self.stocks[ticker].addLot(Lot({
-			'shares': -amount,
-			'price': price,
-			'time': time.time()
-		}))
-	
-	def calculateValue(self, cache) -> bool:
-		newValue = 0
-		for ticker in self.stocks.keys():
-			newValue += self.stocks[ticker].getValue(cache.get(ticker).info)
-		
-		if self.value != newValue:
-			return False
-		else:
-			self.value = newValue
-			return True
+
+		self.stocks[ticker].addLot(
+			Lot({
+				'shares': -amount,
+				'price': price,
+				'time': time.time()
+			}))
 
 	def getLimits(self, ticker: str, price: float) -> tuple:
-			ticker = ticker.upper()
-			
-			limits = [0, 0, 0, 0]
-			
-			# BUY
-			limits[1] = math.floor(self.cash / price)
-			
-			# SELL
-			if ticker not in self.stocks:
-				pass
-			else:
-				limits[2] = 1
-				limits[3] = self.stocks[ticker].totalStake
-			
-			return(limits)
+		ticker = ticker.upper()
+
+		limits = [0, 0, 0, 0]
+
+		# BUY
+		limits[1] = math.floor(self.cash / price)
+
+		# SELL
+		if ticker not in self.stocks:
+			pass
+		else:
+			limits[2] = 1
+			limits[3] = self.stocks[ticker].totalStake
+
+		return (limits)
 
 	def getData(self) -> str:
 		stocksData = {}
@@ -160,24 +174,28 @@ class Portfolio:
 		return data
 
 	def getDataWithCalculations(self, cache) -> dict:
-		stocksData = [self.stocks[ticker].getDataWithCalculations(cache) for ticker in self.stocks.keys()]
+		stocksData = [
+			self.stocks[ticker].getDataWithCalculations(cache)
+			for ticker in self.stocks.keys()
+		]
+
 		dayGain = sum([stock['dayGain'] for stock in stocksData])
 
-		newValueExists = self.calculateValue(cache)
-		
+		self.calculateValue(stocksData)
+
 		data = {
 			'value': self.value,
 			'cash': self.cash,
 			'cost': self.cost,
 			'orders': [x.getData() for x in self.orders],
 			'stocks': stocksData,
-			'netGain': self.value - 50000,
-			'netGainPercentage': (self.value - 50000) / 50000 * 100,
+			'netGain': self.value - STARTING_VALUE,
+			'netGainPercentage': (self.value - STARTING_VALUE) / STARTING_VALUE * 100,
 			'dayGain': dayGain,
 			'dayGainPercentage': dayGain / self.value * 100
 		}
 
-		return (data, newValueExists)
+		return data
 
 	def setData(self, data: dict) -> None:
 		self.value = data['value']
@@ -194,19 +212,19 @@ class Portfolio:
 class ActivityEvent:
 	def __init__(self, data: dict = None):
 		self.time = 0
-		self.description = ''
+		self.value = ''  # Default value is str but can be an int as well
 
 		if data is not None:
 			self.setData(data)
 
 	def getData(self) -> str:
-		data = {'time': self.time, 'description': self.description}
+		data = {'time': self.time, 'value': self.value}
 
 		return data
 
 	def setData(self, data: dict) -> None:
 		self.time = data['time']
-		self.description = data['description']
+		self.value = data['value']
 
 
 class Order:
@@ -269,25 +287,42 @@ class Stock:
 		lots = [x.getDataWithCalculations(info) for x in self.lots]
 
 		data = {
-			'ticker': self.ticker,
-			'totalStake': self.totalStake,
-			'costBasis': self.costBasis,
-			'lots': lots,
-			'dayGain': sum([lot['dayGain'] for lot in lots]),
-			'dayGainPercentage': (sum([lot['dayGain'] for lot in lots]) / (info['previousClose'] * self.totalStake) * 100) if self.totalStake is not 0 else 0,
-			'netGain': sum([lot['netGain'] for lot in lots]),
-			'netGainPercentage': sum([lot['netGain'] for lot in lots]) / self.costBasis * 100,
-			'price': info['regularMarketPrice'],
-			'change': info['regularMarketPrice'] - info['previousClose'],
-			'changePercentage': (info['regularMarketPrice'] - info['previousClose']) / info['previousClose'] * 100,
-			'open': info['regularMarketOpen'],
-			'close': info['previousClose'],
-			'volume': info['regularMarketVolume'],
-			'marketCap': info['marketCap']
+			'ticker':
+			self.ticker,
+			'totalStake':
+			self.totalStake,
+			'costBasis':
+			self.costBasis,
+			'lots':
+			lots,
+			'dayGain':
+			sum([lot['dayGain'] for lot in lots]),
+			'dayGainPercentage': (sum([lot['dayGain'] for lot in lots]) /
+								  (info['previousClose'] * self.totalStake) *
+								  100) if self.totalStake is not 0 else 0,
+			'netGain':
+			sum([lot['netGain'] for lot in lots]),
+			'netGainPercentage':
+			sum([lot['netGain'] for lot in lots]) / self.costBasis * 100,
+			'price':
+			info['regularMarketPrice'],
+			'change':
+			info['regularMarketPrice'] - info['previousClose'],
+			'changePercentage':
+			(info['regularMarketPrice'] - info['previousClose']) /
+			info['previousClose'] * 100,
+			'open':
+			info['regularMarketOpen'],
+			'close':
+			info['previousClose'],
+			'volume':
+			info['regularMarketVolume'],
+			'marketCap':
+			info['marketCap']
 		}
 
 		return data
-	
+
 	def getValue(self, info):
 		return self.totalStake * info['regularMarketPrice']
 
@@ -318,11 +353,15 @@ class Lot:
 
 	def getDataWithCalculations(self, info) -> dict:
 		data = {
-			'shares': self.shares,
-			'price': self.price,
-			'time': self.time,
+			'shares':
+			self.shares,
+			'price':
+			self.price,
+			'time':
+			self.time,
 			'netGain': (info['regularMarketPrice'] - self.price) * self.shares,
-			'dayGain': (info['regularMarketPrice'] - info['previousClose']) * self.shares
+			'dayGain':
+			(info['regularMarketPrice'] - info['previousClose']) * self.shares
 		}
 
 		return data
@@ -339,6 +378,7 @@ class Cache:
 
 	def get(self, ticker):
 		if ticker in self.stocks:
+			self.stocks[ticker].refresh()
 			return self.stocks[ticker]
 		else:
 			self.add(ticker)
@@ -347,10 +387,6 @@ class Cache:
 	def add(self, ticker):
 		self.stocks[ticker] = StockData(yfinance.Ticker(ticker))
 
-	def refresh(self):
-		for ticker, data in self.stocks.items():
-			data.refresh()
-
 
 class StockData:
 	def __init__(self, ticker):
@@ -358,7 +394,29 @@ class StockData:
 		self.info = self.ticker.info
 		self.lastUpdated = time.time()
 
+	def getChartData(self, unit : str) -> list:
+		unitMap = {
+			'y': '1d',
+			'm': '1h',
+			'w': '1h',
+			'd': '1s'
+		}
+
+		rawData = self.ticker.history(period='1'+unit, interval=unitMap[unit])
+		parsedData = []
+
+		for i in range(len(rawData)):
+			row = rawData.iloc[i]
+			parsedData.append({
+				't': row.name.value / 1_000_000,
+				'y': row['Close']
+			})
+
+		return str(parsedData).replace("'", '')
+
 	def refresh(self):
+		# Only refreshes if it has been 30 seconds since last updated
+		# Refreshing only occurs when data is called in order to minimize background processes.
 		if time.time() > self.lastUpdated + 30:
 			self.info = self.ticker.info
 			self.lastUpdated = time.time()
@@ -407,35 +465,31 @@ class Format:
 	@staticmethod
 	def time(number: float) -> str:
 		return time.strftime('%Y-%m-%d %I:%M:%S %p', time.localtime(number))
+	
+	@staticmethod
+	def timeAlt(number: float) -> str:
+		return time.strftime('%B %d, %Y', time.localtime(number))
 
-
-def yearData(ticker: str) -> list:
-	rawData = yfinance.Ticker(ticker).history(period='1y', interval='1mo')
-
-	parsedData = [
-		float(rawData['Close'][i]) for i in rawData.index
-		if not math.isnan(rawData['Close'][i])
-	]
-
-	return parsedData
+	@staticmethod
+	def reverseList(l : list):
+		return reversed(l)
 
 
 class Database:
 	def __init__(self):
-		self.db = mysql.connector.connect(
-			user='root',
-			password=PASSWORD,
-			host='localhost',
-			database=DATABASE,
-			auth_plugin='mysql_native_password'
-		)
+		self.db = mysql.connector.connect(user='root',
+										  password=PASSWORD,
+										  host='localhost',
+										  database=DATABASE,
+										  auth_plugin='mysql_native_password')
 
 		self.cursor = self.db.cursor()
 
-	def getUser(self, username : str) -> dict:
-		iterator = self.cursor.execute('USE stock_simulator; SELECT DISTINCT * FROM users where username = %(username)s;', {
-			'username': username
-		}, multi=True)
+	def getUser(self, username: str) -> dict:
+		iterator = self.cursor.execute(
+			'USE stock_simulator; SELECT DISTINCT * FROM users where username = %(username)s;',
+			{'username': username},
+			multi=True)
 
 		try:
 			for result in iterator:
@@ -444,47 +498,41 @@ class Database:
 		except:
 			return None
 
-	def login(self, username : str, password : str) -> tuple:
+	def login(self, username: str, password: str) -> tuple:
 		user = self.getUser(username)
 		if user is None:
-			return (None, {
-				'username': False,
-				'password': False
-			})
+			return (None, {'username': False, 'password': False})
 
 		if check_password_hash('sha256$' + user[2], password):
-			return (user, {
-				'username': True,
-				'password': True
-			})
+			return (user, {'username': True, 'password': True})
 		else:
-			return (None, {
-				'username': True,
-				'password': False
-			})
+			return (None, {'username': True, 'password': False})
 
-	def createUser(self, username : str, password : str) -> tuple:
+	def createUser(self, username: str, password: str) -> tuple:
 		if self.checkIfUserExists(username):
 			return (None, False)
 
 		print(username, password)
-		
+
 		hashedPassword = generate_password_hash(password, 'sha256')[7:]
-		
-		self.cursor.execute('INSERT INTO users (username, password, portfolio) VALUES(%(username)s, %(password)s, %(portfolio)s);', {
-			'username': username,
-			'password': hashedPassword,
-			'portfolio': '{"blank":"object"}'
-		})
+
+		self.cursor.execute(
+			'INSERT INTO users (username, password, portfolio) VALUES(%(username)s, %(password)s, %(portfolio)s);',
+			{
+				'username': username,
+				'password': hashedPassword,
+				'portfolio': '{"blank":"object"}'
+			})
 
 		self.db.commit()
 
 		return (self.getUser(username), True)
-	
-	def checkIfUserExists(self, username : str) -> bool:
-		iterator = self.cursor.execute('SELECT * FROM users WHERE username = %(username)s LIMIT 1;', {
-			'username': username
-		}, multi=True)
+
+	def checkIfUserExists(self, username: str) -> bool:
+		iterator = self.cursor.execute(
+			'SELECT * FROM users WHERE username = %(username)s LIMIT 1;',
+			{'username': username},
+			multi=True)
 
 		try:
 			for result in iterator:
@@ -493,10 +541,11 @@ class Database:
 		except:
 			return False
 
-	def saveUser(self, userID : int, newUserData : dict) -> None:
-		self.cursor.execute('UPDATE users SET portfolio = %(newData)s WHERE (id = %(id)s);', {
-			'newData': json.dumps(newUserData),
-			'id': str(userID)
-		})
+	def saveUser(self, userID: int, newUserData: dict) -> None:
+		self.cursor.execute(
+			'UPDATE users SET portfolio = %(newData)s WHERE (id = %(id)s);', {
+				'newData': json.dumps(newUserData),
+				'id': str(userID)
+			})
 
 		self.db.commit()
