@@ -26,15 +26,14 @@
 <div class="row">
 
 	<!-- Value -->
-	<div class="col-xl-3 col-md-6 mb-4">
+	<!-- <div class="col-xl-3 col-md-6 mb-4">
 		<div class="card border-left-primary shadow h-100 py-2">
 			<div class="card-body">
 				<div class="row no-gutters align-items-center">
 					<div class="col mr-2">
 						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
 							Portfolio Value</div>
-						<div class="h5 mb-0 font-weight-bold text-gray-800">${{ format.number(portfolio['value']) }}
-						</div>
+						<div class="h5 mb-0 font-weight-bold text-gray-800">${{ format.number(portfolio['value']) }}</div>
 						<div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>
 					</div>
 					<div class="col-auto">
@@ -43,89 +42,19 @@
 				</div>
 			</div>
 		</div>
-	</div>
+	</div> -->
 
-	<!-- Net Gain -->
-	<div class="col-xl-3 col-md-6 mb-4">
-		<div class="card border-left-primary shadow h-100 py-2">
-			<div class="card-body">
-				<div class="row no-gutters align-items-center">
-					<div class="col mr-2">
-						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Net
-							gain</div>
-						<div class="h5 mb-0 font-weight-bold text-{{ format.color(portfolio['netGain']) }}">
-							{{ format.sign(portfolio['netGain']) }}${{ format.number(portfolio['netGain']) }}</div>
-						<div class="h7 mb-0 font-weight-bold text-{{ format.color(portfolio['netGainPercentage']) }}">
-							{{ format.sign(portfolio['netGainPercentage']) }}{{ format.number(portfolio['netGainPercentage']) }}%
-						</div>
-					</div>
-					<div class="col-auto">
-						<i class="fas fa-chart-line fa-2x text-gray-300"></i>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+	{% from "macros.html" import card with context %}
 
-	<!-- Day Gain -->
-	<div class="col-xl-2 col-md-6 mb-4">
-		<div class="card border-left-primary shadow h-100 py-2">
-			<div class="card-body">
-				<div class="row no-gutters align-items-center">
-					<div class="col mr-2">
-						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Day
-							gain</div>
-						<div class="h5 mb-0 font-weight-bold text-{{ format.color(portfolio['dayGain']) }}">
-							{{ format.sign(portfolio['dayGain']) }}${{ format.number(portfolio['dayGain']) }}</div>
-						<div class="h7 mb-0 font-weight-bold text-{{ format.color(portfolio['dayGainPercentage']) }}">
-							{{ format.sign(portfolio['dayGainPercentage']) }}{{ format.number(portfolio['dayGainPercentage']) }}%
-						</div>
-					</div>
-					<div class="col-auto">
-						<i class="fas fa-calendar-day fa-2x text-gray-300"></i>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+	{{ card("Portfolio Value", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-gray-800">$' + format.number(portfolio['value']) + '</div><div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>', "database") }}
 
-	<!-- Cost -->
-	<div class="col-xl-2 col-md-6 mb-4">
-		<div class="card border-left-primary shadow h-100 py-2">
-			<div class="card-body">
-				<div class="row no-gutters align-items-center">
-					<div class="col mr-2">
-						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Cost</div>
-						<div class="h5 mb-0 font-weight-bold text-gray-800">
-							${{ format.number(user.data.portfolio.cost) }}</div>
-						<div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>
-					</div>
-					<div class="col-auto">
-						<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+	{{ card("Net gain", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-'+format.color(portfolio['netGain'])+'">'+format.sign(portfolio['netGain'])+'$'+format.number(portfolio['netGain'])+'</div><div class="h7 mb-0 font-weight-bold text-'+format.color(portfolio['netGainPercentage'])+'">'+format.sign(portfolio['netGainPercentage'])+format.number(portfolio['netGainPercentage'])+'%</div>', "chart-line") }}
 
-	<!-- Cash -->
-	<div class="col-xl-2 col-md-6 mb-4">
-		<div class="card border-left-primary shadow h-100 py-2">
-			<div class="card-body">
-				<div class="row no-gutters align-items-center">
-					<div class="col mr-2">
-						<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Cash</div>
-						<div class="h5 mb-0 font-weight-bold text-gray-800">
-							${{ format.number(user.data.portfolio.cash) }}</div>
-						<div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>
-					</div>
-					<div class="col-auto">
-						<i class="fas fa-money-bill fa-2x text-gray-300"></i>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+	{{ card("Day gain", "primary", "xl-2", '<div class="h5 mb-0 font-weight-bold text-'+format.color(portfolio['dayGain'])+'">'+format.sign(portfolio['dayGain'])+'$'+format.number(portfolio['dayGain'])+'</div><div class="h7 mb-0 font-weight-bold text-'+format.color(portfolio['dayGainPercentage'])+'">'+format.sign(portfolio['dayGainPercentage'])+format.number(portfolio['dayGainPercentage'])+'%</div>', "calendar-day") }}
+
+	{{ card("Cost", "primary", "xl-2", '<div class="h5 mb-0 font-weight-bold text-gray-800">$'+format.number(user.data.portfolio.cost)+'</div><div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>', "dollar-sign") }}
+
+	{{ card("Cash", "primary", "xl-2", '<div class="h5 mb-0 font-weight-bold text-gray-800">$'+format.number(user.data.portfolio.cash)+'</div><div class="h7 mb-0 font-weight-bold" style="color: transparent">.</div>', "money-bill") }}
 </div>
 
 <!-- Content Row -->

@@ -1,4 +1,5 @@
 from structures import *
+from threading import Event as ThreadEvent
 from os import urandom
 import flask, math, json
 
@@ -6,9 +7,21 @@ database = Database()
 cache = Cache()
 app = flask.Flask(__name__)
 
-app.secret_key = urandom(12).hex()
+app.secret_key = urandom(32).hex()
 
-print('Secrety Key: {}'.format(app.secret_key))
+stopEvent = ThreadEvent()
+
+print(f'Secrety Key: {app.secret_key}')
+
+
+def updateAllPortfolios():
+	allUsers = database.getAllUsers()
+
+	for data in allUsers:
+		user = User(json.loads(data[3]))
+		user.data.update(cache)
+
+		database.saveUser(user.id, user.getData())
 
 
 def isLoggedIn() -> bool:
@@ -34,7 +47,8 @@ def addUserToSession(userRow) -> None:
 					"cash": 50000,
 					"cost": 0,
 					"orders": [],
-					"stocks": {}
+					"stocks": {},
+					"orderCounter": 0
 				},
 				"history": {
 					"portfolioValue": [],
@@ -70,6 +84,18 @@ def validTicker(ticker: str) -> bool:
 		return True
 
 
+def cancelOrder(orderID: int) -> None:
+	user = User(flask.session['user'])
+
+	for i in range(len(user.data.portfolio.orders)):
+		if user.data.portfolio.orders[i].id == orderID:
+			user.data.portfolio.orders.pop(i)
+			break
+
+	database.saveUser(user.id, user.getData())
+	flask.session['user'] = user.getData()
+
+
 @app.errorhandler(404)
 def error404(e):
 	user = None
@@ -77,8 +103,8 @@ def error404(e):
 		user = User(flask.session['user'])
 	else:
 		user = User()
-	
-	return flask.render_template('404.html', user=user, format=Format)
+
+	return flask.render_template('404.html', user=user, format=Format, len=len)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -139,6 +165,11 @@ def dashboard():
 									 portfolio=portfolioData,
 									 format=Format,
 									 len=len)
+	elif 'cancelOrder' in flask.request.form:
+		cancelOrder(int(flask.request.form['cancelOrder']))
+
+		return flask.redirect(
+			flask.url_for('stock', ticker=flask.request.args['ticker']))
 	else:
 		return flask.redirect(
 			flask.url_for('stock', ticker=flask.request.form['searchTicker']))
@@ -167,27 +198,49 @@ def stock():
 									 data=data.info,
 									 chartData=chartData,
 									 limits=limits,
-									 format=Format)
+									 format=Format,
+									 len=len)
 	elif 'searchTicker' in flask.request.form:
 		return flask.redirect(
 			flask.url_for('stock', ticker=flask.request.form['searchTicker']))
+	elif 'cancelOrder' in flask.request.form:
+		cancelOrder(int(flask.request.form['cancelOrder']))
+
+		return flask.redirect(
+			flask.url_for('stock', ticker=flask.request.args['ticker']))
 	else:
 		# The buy/sell could not be executed because of insufficient funds or becuase none of that stock is owned (respectively)
 		if int(flask.request.form['amount']) == 0:
 			return flask.redirect(
 				flask.url_for('stock', ticker=flask.request.args['ticker']))
+
 		ticker = flask.request.args['ticker'].upper()
 		action = flask.request.form['action']
 		price = cache.get(ticker).info['regularMarketPrice']
+		stopAndLimit = (int(flask.request.form['limit']),
+						int(flask.request.form['stop']))
 		amount = int(flask.request.form['amount'])
 		user = User(flask.session['user'])
 
+		limits = user.data.portfolio.getLimits(ticker, price)[-2:]
+
 		user.data.history.addLotEvent(action, ticker, amount, price)
 
-		if action == 'BUY':
-			user.data.portfolio.buy(ticker, amount, price)
+		if stopAndLimit[0] == limits[0] and stopAndLimit[1] == limits[1]:
+			if action == 'BUY':
+				user.data.portfolio.buy(ticker, amount, price)
+			else:
+				user.data.portfolio.sell(ticker, amount, price)
 		else:
-			user.data.portfolio.sell(ticker, amount, price)
+			orderType = 'BOTH'
+
+			if stopAndLimit[0] == limits[0]:
+				orderType = 'STOP'
+			elif stopAndLimit[1] == limits[1]:
+				orderType = 'LIMIT'
+
+			user.data.portfolio.addOrder(action, ticker, amount, price,
+										 orderType, stopAndLimit)
 
 		flask.session['user'] = user.getData()
 		database.saveUser(user.id, flask.session['user'])
@@ -196,4 +249,19 @@ def stock():
 			flask.url_for('stock', ticker=flask.request.args['ticker']))
 
 
-app.run(debug=True)
+@app.route('/logout', methods=['GET'])
+def logout():
+	if 'user' in flask.session:
+		del flask.session['user']
+		flask.session['loggedIn'] = False
+	return flask.redirect(flask.url_for('register'))
+
+
+if __name__ == "__main__":
+	background = BackgroundProcesses(stopEvent, updateAllPortfolios)
+	background.start()
+
+	# To end the background process, uncomment the following line:
+	# stopEvent.set()
+
+	app.run(debug=True)

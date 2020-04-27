@@ -100,10 +100,7 @@
 							<a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
 								data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 								<i class="fas fa-bell fa-fw"></i>
-								<!-- Counter - Alerts -->
-								<!-- <span class="badge badge-danger badge-counter">3</span> -->
 							</a>
-							<!-- Dropdown - Alerts -->
 							<div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
 								aria-labelledby="alertsDropdown">
 								<h6 class="dropdown-header">
@@ -126,31 +123,46 @@
 						</li>
 
 						<!-- Nav Item - Orders -->
-						<!--<li class="nav-item dropdown no-arrow mx-1">
-							<a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+						<li class="nav-item dropdown no-arrow mx-1">
+							<a class="nav-link dropdown-toggle" href="#" id="ordersDropdown" role="button"
 								data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 								<i class="fas fa-receipt fa-fw"></i>
-								<span class="badge badge-danger badge-counter">3</span>
+								<span class="badge badge-danger badge-counter">{{ len(user.data.portfolio.orders) }}</span>
 							</a>
 							<div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
-								aria-labelledby="alertsDropdown">
-								<h6 class="dropdown-header"></h6>
+								aria-labelledby="ordersDropdown">
+								<h6 class="dropdown-header">
 									Orders
 								</h6>
-								<a class="dropdown-item d-flex align-items-left" href="#">
+								{% if len(user.data.portfolio.orders) != 0 %}
+									{% for order in user.data.portfolio.orders %}
+										<div class="dropdown-item d-flex align-items-left">
+											<div class="container pl-0 pr-0">
+												<div style="display: inline;">
+													<div class="small text-gray-500">{{ format.timeAlt(order.time) }}</div>
+													<span class="font-weight-bold">{{ order.action }}: {{ order.ticker }}</span>
+													<br>
+													<span class="">{{ order.type }} {{ order.limits }}</span>
+												</div>
+												<div class="text-right">
+													<form method="POST">
+														<input name="cancelOrder" type="number" readonly style="display: none" value="{{ order.id }}">
+														<button class="btn btn-sm btn-danger shadow-sm float-right">Cancel</button>
+													</form>
+												</div>
+											</div>
+										</div>
+									{% endfor %}
+								{% else %}
+								<div class="dropdown-item d-flex align-items-left">
 									<div class="container pl-0 pr-0">
 										<div style="display: inline;">
-											<div class="small text-gray-500">December 12, 2019</div>
-											<span class="font-weight-bold">BUY: AAPL</span>
-											<br>
-											<span class="">Limit $500, No Stop</span>
-										</div>
-										<div class="text-right">
-											<button class="btn btn-sm btn-danger shadow-sm float-right">Cancel</button>
+											<span class="">No Current orders</span>
 										</div>
 									</div>
-								</a>
-								<a class="dropdown-item d-flex align-items-center" href="#">
+								</div>
+								{% endif %}
+								<!--<a class="dropdown-item d-flex align-items-center" href="#">
 									<div class="container pl-0 pr-0">
 										<div style="display: inline;">
 											<div class="small text-gray-500">December 12, 2019</div>
@@ -175,9 +187,9 @@
 											<button class="btn btn-sm btn-danger shadow-sm float-right">Cancel</button>
 										</div>
 									</div>
-								</a>
+								</a>-->
 							</div>
-						</li>-->
+						</li>
 
 						<div class="topbar-divider d-none d-sm-block"></div>
 
@@ -254,7 +266,7 @@
 				<div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
 				<div class="modal-footer">
 					<button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-					<a class="btn btn-primary" href="/login">Logout</a>
+					<a class="btn btn-primary" href="/logout">Logout</a>
 				</div>
 			</div>
 		</div>

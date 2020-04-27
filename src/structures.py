@@ -1,4 +1,5 @@
 from werkzeug.security import check_password_hash, generate_password_hash
+from threading import Thread
 from settings import *
 import json, time, ssl, yfinance, requests, math, mysql.connector
 
@@ -40,6 +41,25 @@ class UserData:
 		if data is not None:
 			self.setData(data)
 
+	def update(self, cache):
+		# Updates the portfolio values with the most recent.
+		self.portfolio.getDataWithCalculations(cache)
+		self.history.addPortfolioValue(time.time(), self.portfolio.value)
+
+		# Executes the currenct open orders if ready
+		for order in self.portfolio.orders:
+			info = cache.get(order.ticker).info
+			price = info['regularMarketPrice']
+
+			if order.isReady(info):
+				# Ensures that their is enough money to execute the buy order
+				if order.action == 'BUY' and self.portfolio.cash >= order.amount * price:
+					self.portfolio.buy(order.ticker, order.amount, price)
+				# Ensures that their is enough shares for the sell order
+				elif order.action == 'SELL' and self.portfolio.stocks[
+						order.ticker].totalStake >= order.amount:
+					self.portfolio.price(order.ticker, order.amount, price)
+
 	def getData(self) -> str:
 		data = {
 			'portfolio': self.portfolio.getData(),
@@ -60,22 +80,28 @@ class History:
 
 		if data is not None:
 			self.setData(data)
-	
+
 	def addPortfolioValue(self, currentTime, currentValue):
-		self.portfolioValue.append(ActivityEvent({
-			'time': currentTime,
-			'value': currentValue
-		}))
+		self.portfolioValue.append(
+			ActivityEvent({
+				'time': currentTime,
+				'value': currentValue
+			}))
 
 	def addLotEvent(self, lotType, ticker, amount, price):
-		self.activity.append(ActivityEvent({
-			'time': time.time(),
-			'value': f'{lotType}: {amount} shares of {ticker} at ${price}'
-		}))
+		self.activity.append(
+			ActivityEvent({
+				'time':
+				time.time(),
+				'value':
+				f'{lotType}: {amount} shares of {ticker} at ${price}'
+			}))
 
 	def getData(self) -> str:
 		data = {
-			'portfolioValue': [x.getData() for x in self.portfolioValue],  # Add time to value history
+			'portfolioValue':
+			[x.getData()
+			 for x in self.portfolioValue],  # Add time to value history
 			'activity': [x.getData() for x in self.activity]
 		}
 
@@ -100,17 +126,32 @@ class Portfolio:
 		self.cost = 0
 		self.orders = []
 		self.stocks = {}
+		self.orderCounter = 0
 
 		if data is not None:
 			self.setData(data)
-	
-	def calculateValue(self, stocksData : dict) -> None:
+
+	def calculateValue(self, stocksData: dict) -> None:
 		newValue = self.cash
 		for stock in stocksData:
 			newValue += stock['price'] * stock['totalStake']
-		
+
 		self.value = newValue
-	
+
+	def addOrder(self, action: str, ticker: str, amount: int, price: float,
+				 orderType: str, limits: str):
+		self.orders.append(
+			Order({
+				'id': self.orderCounter,
+				'time': time.time(),
+				'action': action,
+				'type': orderType,
+				'limits': limits,
+				'ticker': ticker
+			}))
+
+		self.orderCounter += 1
+
 	def buy(self, ticker: str, amount: int, price: float) -> None:
 		self.cash -= amount * price
 		self.cost += amount * price
@@ -144,7 +185,7 @@ class Portfolio:
 	def getLimits(self, ticker: str, price: float) -> tuple:
 		ticker = ticker.upper()
 
-		limits = [0, 0, 0, 0]
+		limits = [0] * 6
 
 		# BUY
 		limits[1] = math.floor(self.cash / price)
@@ -155,6 +196,9 @@ class Portfolio:
 		else:
 			limits[2] = 1
 			limits[3] = self.stocks[ticker].totalStake
+
+		limits[4] = round(0.5 * price)
+		limits[5] = round(1.5 * price)
 
 		return (limits)
 
@@ -168,7 +212,8 @@ class Portfolio:
 			'cash': self.cash,
 			'cost': self.cost,
 			'orders': [x.getData() for x in self.orders],
-			'stocks': stocksData
+			'stocks': stocksData,
+			'orderCounter': self.orderCounter
 		}
 
 		return data
@@ -190,9 +235,11 @@ class Portfolio:
 			'orders': [x.getData() for x in self.orders],
 			'stocks': stocksData,
 			'netGain': self.value - STARTING_VALUE,
-			'netGainPercentage': (self.value - STARTING_VALUE) / STARTING_VALUE * 100,
+			'netGainPercentage':
+			(self.value - STARTING_VALUE) / STARTING_VALUE * 100,
 			'dayGain': dayGain,
-			'dayGainPercentage': dayGain / self.value * 100
+			'dayGainPercentage': dayGain / self.value * 100,
+			'orderCounter': self.orderCounter
 		}
 
 		return data
@@ -207,6 +254,8 @@ class Portfolio:
 
 		for key in data['stocks'].keys():
 			self.stocks[key] = Stock(data['stocks'][key])
+
+		self.orderCounter = data['orderCounter']
 
 
 class ActivityEvent:
@@ -229,17 +278,36 @@ class ActivityEvent:
 
 class Order:
 	def __init__(self, data: dict = None):
-		self.time = 0
+		self.id = 0
 		self.action = ''  # BUY or SELL
-		self.type = ''  # STOP, LIMIT, BOTH
+
+		self.type = ''
+		# STOP, LIMIT, BOTH. No stop/limit orders are executed immediately, so
+		# order objects are not created
+
 		self.limits = [0, 0]
 		self.ticker = ''
 
 		if data is not None:
 			self.setData(data)
 
+	def isReady(self, info) -> bool:
+		# Checks if the order is ready to be executed
+		stopTrue = info['regularMarketPrice'] > self.limits[1]
+		limitTrue = info['regularMarketPrice'] < self.limits[0]
+
+		if self.type == 'STOP' and stopTrue:
+			return True
+		elif self.type == 'LIMIT' and limitTrue:
+			return True
+		elif self.type == 'BOTH' and (stopTrue or limitTrue):
+			return True
+
+		return False
+
 	def getData(self) -> str:
 		data = {
+			'id': self.id,
 			'time': self.time,
 			'action': self.action,
 			'type': self.type,
@@ -250,6 +318,7 @@ class Order:
 		return data
 
 	def setData(self, data: dict) -> None:
+		self.id = data['id']
 		self.time = data['time']
 		self.action = data['action']
 		self.type = data['type']
@@ -394,15 +463,11 @@ class StockData:
 		self.info = self.ticker.info
 		self.lastUpdated = time.time()
 
-	def getChartData(self, unit : str) -> list:
-		unitMap = {
-			'y': '1d',
-			'm': '1h',
-			'w': '1h',
-			'd': '1s'
-		}
+	def getChartData(self, unit: str) -> list:
+		unitMap = {'y': '1d', 'm': '1h', 'w': '1h', 'd': '1s'}
 
-		rawData = self.ticker.history(period='1'+unit, interval=unitMap[unit])
+		rawData = self.ticker.history(period='1' + unit,
+									  interval=unitMap[unit])
 		parsedData = []
 
 		for i in range(len(rawData)):
@@ -465,13 +530,13 @@ class Format:
 	@staticmethod
 	def time(number: float) -> str:
 		return time.strftime('%Y-%m-%d %I:%M:%S %p', time.localtime(number))
-	
+
 	@staticmethod
 	def timeAlt(number: float) -> str:
 		return time.strftime('%B %d, %Y', time.localtime(number))
 
 	@staticmethod
-	def reverseList(l : list):
+	def reverseList(l: list):
 		return reversed(l)
 
 
@@ -549,3 +614,30 @@ class Database:
 			})
 
 		self.db.commit()
+
+	def getAllUsers(self) -> list:
+		iterator = self.cursor.execute(
+			'USE stock_simulator; SELECT * FROM stock_simulator.users;',
+			multi=True)
+
+		try:
+			for result in iterator:
+				if result.with_rows:
+					return result.fetchall()
+		except:
+			return None
+
+
+class BackgroundProcesses(Thread):
+	def __init__(self, stopTrigger, function):
+		Thread.__init__(self)
+		self.stopTrigger = stopTrigger
+		self.function = function
+
+	def run(self):
+		# Wait value in seconds. Waits 1h between checks to not overload the
+		# program.
+		while not self.stopTrigger.wait(10):
+			print('Started background processes')
+			self.function()
+		print('Finished background processes')

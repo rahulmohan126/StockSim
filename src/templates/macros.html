@@ -1,0 +1,155 @@
+{% macro card(name, nameColor, size, content, icon) %}
+<div class="col-{{ size }} col-md-6 mb-4">
+	<div class="card border-left-primary shadow h-100 py-2">
+		<div class="card-body">
+			<div class="row no-gutters align-items-center">
+				<div class="col mr-2">
+					<div class="text-xs font-weight-bold text-{{ nameColor }} text-uppercase mb-1">{{ name }}</div>
+					{{ content | safe }}
+				</div>
+				<div class="col-auto">
+					<i class="fas fa-{{ icon }} fa-2x text-gray-300"></i>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endmacro %}
+
+{% macro input_slider_pair(id, range, min, max, mid) %}
+<script>
+	$(document).ready(function () {
+		$(function () {
+			$("#{{ id }}Slider").slider({
+				range: "{{ range }}",
+				min: Number("{{ min }}"),
+				max: Number("{{ max }}"),
+				value: Number("{{ mid }}"),
+				slide: function (event, ui) {
+					$("#{{ id }}Input").val(ui.value);
+				}
+			});
+			$("#{{ id }}Input").val($("#{{ id }}Slider").slider("value"));
+		});
+
+		$("#{{ id }}Input").change(function () {
+			var value = $(this).val();
+			$("#{{ id }}Slider").slider("value", value);
+		});
+	});
+</script>
+
+<div class="form-group" id="{{ id }}Div">
+	<p>
+		<label for="{{ id }}Input">Shares:</label>
+		<input id="{{ id }}Input" name="amount" class="text-primary" type="number" min="{{ min }}" max="{{ max }}"
+			style="border:0; color:#f6931f; font-weight:bold;">
+	</p>
+	<div id="{{ id }}Slider"></div>
+</div>
+{% endmacro %}
+
+{% macro range_slider_pair(id, min, max) %}
+<script>
+	$(document).ready(function () {
+		var changeL = function () {
+			const x = $("#{{ id }}InputL");
+			var floor = Number("{{ min }}");
+			var value = x.val();
+
+			if (value == floor) {
+				x.hide();
+				$("#{{ id }}Min").show();
+				return;
+			}
+			else {
+				x.show();
+				$("#{{ id }}Min").hide();
+			}
+
+			if (value < floor) {
+				x.val(floor + 1);
+				value = x.val();
+			}
+
+			$("#{{ id }}Slider").slider("values", 0, value);
+		}
+
+		var changeR = function () {
+			const x = $("#{{ id }}InputR");
+			var ceiling = Number("{{ max }}");
+			var value = x.val();
+
+			if (value == ceiling) {
+				x.hide();
+				$("#{{ id }}Max").show();
+			}
+			else {
+				x.show();
+				$("#{{ id }}Max").hide();
+			}
+
+			if (value > ceiling) {
+				x.val(ceiling + 1);
+				value = x.val();
+			}
+
+			$("#{{ id }}Slider").slider("values", 1, value);
+		}
+
+		var past;
+		$(function () {
+			$("#{{ id }}Slider").slider({
+				range: true,
+				min: Number("{{ min }}"),
+				max: Number("{{ max }}"),
+				values: [Number("{{ min }}"), Number("{{ max }}")],
+				slide: function (event, ui) {
+					if (!past) {
+						past = ui.values;
+					}
+
+					if (ui.values[0] == ui.values[1]) {
+						if (past[0] !== ui.values[0]) {
+							ui.values[0] -= 1;
+						}
+						else {
+							ui.values[1] += 1;
+						}
+					}
+
+					$("#{{ id }}InputL").val(ui.values[0]);
+					changeL();
+
+					$("#{{ id }}InputR").val(ui.values[1]);
+					changeR();
+
+					past = ui.values;
+				}
+			});
+			$("#{{ id }}InputL").val($("#{{ id }}Slider").slider("values", 0));
+			$("#{{ id }}InputR").val($("#{{ id }}Slider").slider("values", 1));
+		});
+
+		$("#{{ id }}InputL").hide();
+		$("#{{ id }}InputR").hide();
+
+		$("#{{ id }}InputL").change(changeL);
+		$("#{{ id }}InputR").change(changeR);
+	});
+</script>
+
+<div class="form-group" id="{{ id }}Div">
+	<p>
+		<label for="{{ id }}InputL">Limit & Stop:</label>
+		<input id="{{ id }}InputL" name="limit" class="text-primary" type="number" min="{{ min }}" max="{{ max }}"
+			style="border:0; color:#f6931f; font-weight:bold;">
+		<label id="{{ id }}Min">No Limit</label>
+		<label>|</label>
+		<input id="{{ id }}InputR" name="stop" class="text-primary" type="number" min="{{ min }}" max="{{ max }}"
+			style="border:0; color:#f6931f; font-weight:bold;">
+		<label id="{{ id }}Max">No Stop</label>
+	</p>
+	<div id="{{ id }}Slider"></div>
+</div>
+{% endmacro %}
