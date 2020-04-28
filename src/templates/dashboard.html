@@ -147,7 +147,7 @@
 							pointHoverBorderColor: "rgba(78, 115, 223, 1)",
 							pointHitRadius: 10,
 							pointBorderWidth: 2,
-							data: [{% for i in range(len(user.data.history.portfolioValue) - 12, len(user.data.history.portfolioValue)) %} {% if i < 0 %}, {% else %} { { user['data']['history']['portfolioValue'][i] } }, {% endif %} {% endfor %}],
+							data: [{% for i in range(format.len(user.data.history.portfolioValue) - 12, format.len(user.data.history.portfolioValue)) %} {% if i < 0 %}, {% else %} { { user['data']['history']['portfolioValue'][i] } }, {% endif %} {% endfor %}],
 						}],
 					},
 				options: {
@@ -377,8 +377,7 @@
 						</tbody>
 					</table>
 				</div>
-				<style>
-				</style>
+
 				<script>
 					$(document).ready(function () {
 						var table = $('#dataTable').DataTable({

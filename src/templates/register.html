@@ -70,11 +70,11 @@
 	<script>
 		var urlParams = new URLSearchParams(window.location.search);
 
-		if (urlParams.has('invalidusername') && urlParams.get('invalidusername')) {
+		if (urlParams.get('invalidUsername') === 'True') {
 			document.getElementById("invalidUsername").innerHTML = "This username is taken";
 		}
 		
-		if (urlParams.has('invalidrepeat') && urlParams.get('invalidrepeat')) {
+		if (urlParams.get('invalidRepeat') === 'True') {
 			document.getElementById("invalidRepeat").innerHTML = "Passwords didn't match up";
 		}
 	</script>

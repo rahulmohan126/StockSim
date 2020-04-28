@@ -69,11 +69,11 @@
 	<script>
 		var urlParams = new URLSearchParams(window.location.search);
 
-		if (urlParams.has('invalidusername') && urlParams.get('invalidusername')) {
+		if (urlParams.get('invalidUsername') === 'True') {
 			document.getElementById("invalidUsername").innerHTML = "An account with that username does not exist";
 		}
 
-		if (urlParams.has('invalidpassword') && urlParams.get('invalidpassword')) {
+		if (urlParams.get('invalidPassword') === 'True') {
 			document.getElementById("invalidPassword").innerHTML = "Incorrect password";
 		}
 	</script>

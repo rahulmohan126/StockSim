@@ -59,6 +59,8 @@ def addUserToSession(userRow) -> None:
 
 		userRow[3] = TEMPLATE
 
+		database.saveUser(userRow[0], userRow[3])
+
 	flask.session['user'] = userRow[3]
 	flask.session['loggedIn'] = True
 
@@ -104,7 +106,7 @@ def error404(e):
 	else:
 		user = User()
 
-	return flask.render_template('404.html', user=user, format=Format, len=len)
+	return flask.render_template('404.html', user=user, format=Format)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -139,8 +141,7 @@ def login():
 		else:
 			return flask.render_template('login.html')
 	else:
-		user, res = database.login(flask.request.form['username'],
-								   flask.request.form['password'])
+		user, res = database.login(flask.request.form['username'], flask.request.form['password'])
 
 		if res['username'] is False:
 			return flask.redirect(flask.url_for('login', invalidUsername=True))
@@ -160,19 +161,13 @@ def dashboard():
 		user = User(flask.session['user'])
 		portfolioData = user.data.portfolio.getDataWithCalculations(cache)
 
-		return flask.render_template('dashboard.html',
-									 user=user,
-									 portfolio=portfolioData,
-									 format=Format,
-									 len=len)
+		return flask.render_template('dashboard.html', user=user, portfolio=portfolioData, format=Format)
 	elif 'cancelOrder' in flask.request.form:
 		cancelOrder(int(flask.request.form['cancelOrder']))
 
-		return flask.redirect(
-			flask.url_for('stock', ticker=flask.request.args['ticker']))
+		return flask.redirect(flask.url_for('dashboard'))
 	else:
-		return flask.redirect(
-			flask.url_for('stock', ticker=flask.request.form['searchTicker']))
+		return flask.redirect(flask.url_for('stock', ticker=flask.request.form['searchTicker']))
 
 
 @app.route('/stock', methods=['GET', 'POST'])
@@ -192,14 +187,7 @@ def stock():
 		limits = user.data.portfolio.getLimits(flask.request.args['ticker'],
 											   data.info['regularMarketPrice'])
 
-		return flask.render_template('stock.html',
-									 user=user,
-									 ticker=data.info['symbol'],
-									 data=data.info,
-									 chartData=chartData,
-									 limits=limits,
-									 format=Format,
-									 len=len)
+		return flask.render_template('stock.html', user=user, ticker=data.info['symbol'], data=data.info, chartData=chartData, limits=limits, format=Format)
 	elif 'searchTicker' in flask.request.form:
 		return flask.redirect(
 			flask.url_for('stock', ticker=flask.request.form['searchTicker']))
@@ -247,6 +235,26 @@ def stock():
 
 		return flask.redirect(
 			flask.url_for('stock', ticker=flask.request.args['ticker']))
+
+
+@app.route('/leaderboard', methods=['GET', 'POST'])
+def leaderboard():
+	if not isLoggedIn():
+		return flask.redirect(flask.url_for('register'))
+
+	if flask.request.method == 'GET':
+		user = User(flask.session['user'])
+		portfolioData = user.data.portfolio.getDataWithCalculations(cache)
+
+		numOfUsers = 10
+
+		return flask.render_template('leaderboard.html', user=user, leaderboard=database.getLeaderboard(numOfUsers), format=Format)
+	elif 'cancelOrder' in flask.request.form:
+		cancelOrder(int(flask.request.form['cancelOrder']))
+
+		return flask.redirect(flask.url_for('dashboard'))
+	else:
+		return flask.redirect(flask.url_for('stock', ticker=flask.request.form['searchTicker']))
 
 
 @app.route('/logout', methods=['GET'])

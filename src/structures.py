@@ -538,6 +538,10 @@ class Format:
 	@staticmethod
 	def reverseList(l: list):
 		return reversed(l)
+	
+	@staticmethod
+	def len(iterable):
+		return len(iterable)
 
 
 class Database:
@@ -626,6 +630,20 @@ class Database:
 					return result.fetchall()
 		except:
 			return None
+	
+	def getLeaderboard(self, num : int) -> list:
+		allUsers = self.getAllUsers()
+
+		for i in range(len(allUsers)):
+			allUsers[i] = json.loads(allUsers[i][3])
+
+		def sortUserCmp(user):
+			return user['data']['portfolio']['value']
+
+		allUsers.sort(key=sortUserCmp, reverse=True)
+
+		return allUsers[:num]
+		
 
 
 class BackgroundProcesses(Thread):
@@ -637,7 +655,7 @@ class BackgroundProcesses(Thread):
 	def run(self):
 		# Wait value in seconds. Waits 1h between checks to not overload the
 		# program.
-		while not self.stopTrigger.wait(10):
+		while not self.stopTrigger.wait(60 * 60):
 			print('Started background processes')
 			self.function()
 		print('Finished background processes')

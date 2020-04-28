@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block title %}Leaderboard{% endblock %}
+
+{% block scripts %}
+
+<script src="static/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="card-body">
+	<hr>
+	<style>
+		.dataTables_filter {
+			display: none;
+		}
+	</style>
+	<div class="table-responsive">
+		<table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+			<thead>
+				<tr>
+					<th>USER</th>
+					<th>PORTFOLIO VALUE</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for user in leaderboard %}
+				<tr>
+					<td><b>{{ user['username'] }}</b></td>
+					<td>${{ format.number(user['data']['portfolio']['value']) }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	<script>
+		$(document).ready(function () {
+			var table = $('#dataTable').DataTable({
+				"bSort": false,
+				"bInfo": false,
+				"bPaginate": false,
+				"searching": true,
+				"columnDefs": [
+				],
+			});
+		});
+	</script>
+</div>
+
+{% endblock %}

@@ -16,10 +16,8 @@ Date collected from Yahoo Finance through the yFinance module.
 4. *Enable logout button (same result can be achieved by closing browser but just for convenience) (v1.2) --- DONE*
 5. *Add stop/limit options to buying/selling (v1.2) --- DONE*
 6. *Orders item in nav bar for current open orders (v1.2) --- DONE*
-7. Enable "Get JSON data" button (export your data) (v1.3)
-8. Dark mode (v1.3)
-9. Enable all dropdown menu options (stock growth, portfolio growth, and stock distribution) (v1.3)
-10. Global leaderboard (v1.3)
+7. *Global leaderboard (v1.3) --- DONE*
+8. Enable all dropdown menu options (stock growth, portfolio growth, and stock distribution) (v1.4)
 
 ## Installation
 
