@@ -12,17 +12,17 @@
 <!-- Content Row -->
 {% from "macros.html" import card with context %}
 <div class="row">
-	{{ card("Price", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-gray-800">'+format.number(data['regularMarketPrice'])+'</div>', "database") }}
-	{{ card("Open", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['regularMarketOpen'])+'</div>', "dollar-sign") }}
-	{{ card("Close", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['previousClose'])+'</div>', "dollar-sign") }}
-	{{ card("Volume", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['regularMarketVolume'])+'</div>', "dollar-sign") }}
+	{{ card("Price", "primary", "col-xl-3 col-md-6 mb-4", '<div class="h5 mb-0 font-weight-bold text-gray-800">'+format.number(data['regularMarketPrice'])+'</div>', "database") }}
+	{{ card("Open", "primary", "col-xl-3 col-md-6 mb-4", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['regularMarketOpen'])+'</div>', "dollar-sign") }}
+	{{ card("Close", "primary", "col-xl-3 col-md-6 mb-4", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['previousClose'])+'</div>', "dollar-sign") }}
+	{{ card("Volume", "primary", "col-xl-3 col-md-6 mb-4", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['regularMarketVolume'])+'</div>', "dollar-sign") }}
 </div>
 
 <div class="row">
-	{{ card("Market Cap", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-gray-800">'+format.number(data['marketCap'])+'</div>', "dollar-sign") }}
-	{{ card("Bid", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['bid'])+'</div>', "dollar-sign") }}
-	{{ card("Ask", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['ask'])+'</div>', "dollar-sign") }}
-	{{ card("StockSim Score", "primary", "xl-3", '<div class="h5 mb-0 font-weight-bold text-success">95%</div>', "dollar-sign") }}
+	{{ card("Market Cap", "primary", "col-xl-3 col-md-6 mb-4", '<div class="h5 mb-0 font-weight-bold text-gray-800">'+format.number(data['marketCap'])+'</div>', "dollar-sign") }}
+	{{ card("Bid", "primary", "col-xl-3 col-md-6 mb-4", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['bid'])+'</div>', "dollar-sign") }}
+	{{ card("Ask", "primary", "col-xl-3 col-md-6 mb-4", '<div class="h5 mb-0 font-weight-bold text-success">'+format.number(data['ask'])+'</div>', "dollar-sign") }}
+	{{ card("StockSim Score", "primary", "col-xl-3 col-md-6 mb-4", '<div class="h5 mb-0 font-weight-bold text-success">95%</div>', "dollar-sign") }}
 </div>
 
 <!-- Content Row -->
@@ -51,8 +51,6 @@
 			</div>
 			<!-- Card Body -->
 			<div class="card-body">
-				<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
-				<script src="static/vendor/chart.js/Chart.min.js"></script>
 				<style>
 					canvas {
 						-moz-user-select: none;
@@ -63,138 +61,13 @@
 				<div>
 					<canvas id="chart1"></canvas>
 				</div>
-				<script>
-
-					// This is testing for the chart dropdown menu to view different time intervals/periods
-					/*var CURRENT_UNIT = 'year';
-
-					function changeUnit(unit) {
-						CURRENT_UNIT = unit;
-						var dataset = chart.config.data.datasets[0];
-						console.log(generateData());
-						dataset.data = generateData();
-						chart.update();
-					}*/
-
-					var ctx = document.getElementById('chart1').getContext('2d');
-
-					var color = Chart.helpers.color;
-					var cfg = {
-						data: {
-							datasets: [{
-								label: "{{ ticker }}",
-								backgroundColor: "rgba(78, 115, 223, 0.05)",
-								borderColor: "rgba(78, 115, 223, 1)",
-								data: {{ chartData }},
-						type: 'line',
-						pointRadius: 0,
-						fill: false,
-						lineTension: 0,
-						borderWidth: 2
-					}]
-						},
-					options: {
-						legend: {
-							display: false
-						},
-						animation: {
-							duration: 0
-						},
-						scales: {
-							xAxes: [{
-								gridLines: {
-									drawOnChartArea: false
-								},
-								type: 'time',
-								distribution: 'series',
-								offset: true,
-								ticks: {
-									major: {
-										enabled: true,
-										fontStyle: 'bold'
-									},
-									source: 'data',
-									autoSkip: true,
-									autoSkipPadding: 75,
-									maxRotation: 0,
-									sampleSize: 100
-								},
-								afterBuildTicks: function (scale, ticks) {
-									var majorUnit = scale._majorUnit;
-									var firstTick = ticks[0];
-									var i, ilen, val, tick, currMajor, lastMajor;
-
-									val = moment(ticks[0].value);
-									if ((majorUnit === 'minute' && val.second() === 0)
-										|| (majorUnit === 'hour' && val.minute() === 0)
-										|| (majorUnit === 'day' && val.hour() === 9)
-										|| (majorUnit === 'month' && val.date() <= 3 && val.isoWeekday() === 1)
-										|| (majorUnit === 'year' && val.month() === 0)) {
-										firstTick.major = true;
-									} else {
-										firstTick.major = false;
-									}
-									lastMajor = val.get(majorUnit);
-
-									for (i = 1, ilen = ticks.length; i < ilen; i++) {
-										tick = ticks[i];
-										val = moment(tick.value);
-										currMajor = val.get(majorUnit);
-										tick.major = currMajor !== lastMajor;
-										lastMajor = currMajor;
-									}
-									return ticks;
-								}
-							}],
-								yAxes: [{
-									gridLines: {
-										drawOnChartArea: false
-									},
-								}]
-						},
-						tooltips: {
-							intersect: false,
-								mode: 'index',
-									callbacks: {
-								label: function (tooltipItem, myData) {
-									var label = myData.datasets[tooltipItem.datasetIndex].label || '';
-									if (label) {
-										label += ': ';
-									}
-									label += parseFloat(tooltipItem.value).toFixed(2);
-									return label;
-								}
-							}
-						}
-					}
-					};
-
-					var chart = new Chart(ctx, cfg);
-				</script>
 			</div>
 		</div>
 	</div>
 	<div class="col-xl-3">
 		<!-- Stake -->
 		<div class="row">
-			<div class="col mb-5" id="stakeCard">
-				<div class="card border-bottom-success shadow h-100 py-2">
-					<div class="card-body">
-						<div class="row no-gutters align-items-center">
-							<div class="col">
-								<div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-									Stake</div>
-								<div class="h5 mb-0 font-weight-bold text-success">
-									{% if ticker in user.data.portfolio.stocks.keys() %}{{ user.data.portfolio.stocks[ticker].totalStake }}
-									{% else %} {{ 0 }} {% endif %} shares</div>
-							</div>
-							<div class="col-auto">
-								<i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+			{{ card("Stake", "primary", "col mb-5", '<div class="h5 mb-0 font-weight-bold text-success">' + format.str(0 if ticker not in user.data.portfolio.stocks.keys() else user.data.portfolio.stocks[ticker].totalStake) + ' shares</div>', "dollar-sign") }}
 		</div>
 
 		<style>
@@ -285,6 +158,14 @@
 <!-- Page level plugins -->
 <script src="static/vendor/datatables/jquery.dataTables.min.js"></script>
 <script src="static/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+
+<script>
+	const ticker = "{{ ticker }}";
+	const chartData = {{ chartData }};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+<script src="static/vendor/chart.js/Chart.min.js"></script>
+<script src="static/js/time-series.js"></script>
 
 <!-- Page level custom scripts -->
 <!--<script src="static/js/demo/chart-area-demo.js"></script>-->

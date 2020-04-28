@@ -542,6 +542,10 @@ class Format:
 	@staticmethod
 	def len(iterable):
 		return len(iterable)
+	
+	@staticmethod
+	def str(x):
+		return str(x)
 
 
 class Database:
