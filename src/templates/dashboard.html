@@ -34,19 +34,6 @@
 			<!-- Card Header - Dropdown -->
 			<div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
 				<h6 class="m-0 font-weight-bold text-primary">Portfolio Growth</h6>
-				<div class="dropdown no-arrow">
-					<a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown"
-						aria-haspopup="true" aria-expanded="false">
-						<i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-					</a>
-					<div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-						aria-labelledby="dropdownMenuLink">
-						<div class="dropdown-header">Scope:</div>
-						<a class="dropdown-item" href="#">Year</a>
-						<a class="dropdown-item" href="#">Month</a>
-						<a class="dropdown-item" href="#">Week</a>
-					</div>
-				</div>
 			</div>
 			<!-- Card Body -->
 			<div class="card-body">
@@ -54,7 +41,6 @@
 					<canvas id="myAreaChart"></canvas>
 				</div>
 			</div>
-			
 		</div>
 	</div>
 
@@ -64,18 +50,6 @@
 			<!-- Card Header - Dropdown -->
 			<div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
 				<h6 class="m-0 font-weight-bold text-primary">Stock Distribution</h6>
-				<div class="dropdown no-arrow">
-					<a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown"
-						aria-haspopup="true" aria-expanded="false">
-						<i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
-					</a>
-					<div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
-						aria-labelledby="dropdownMenuLink">
-						<div class="dropdown-header">Type:</div>
-						<a class="dropdown-item" href="#">By Ticker</a>
-						<a class="dropdown-item" href="#">By Sector</a>
-					</div>
-				</div>
 			</div>
 			<!-- Card Body -->
 			<div class="card-body">
@@ -100,8 +74,8 @@
 				<div>
 					<h6 style="display: inline" class="m-0 font-weight-bold text-primary">Stocks Data</h6>
 					<button style="display: inline;"
-						class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm float-right" id="toggle">Show
-						Lots</button>
+						class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm float-right"
+						id="toggle">ShowLots</button>
 				</div>
 			</div>
 			<div class="card-body">
@@ -167,7 +141,7 @@
 								<td>-</td>
 							</tr>
 							{% endfor %}
-							{% endfor%}
+							{% endfor %}
 						</tbody>
 					</table>
 				</div>
@@ -194,9 +168,9 @@
 
 <!-- Page level custom scripts -->
 <script>
-	const chartData = [{% for i in range(format.len(user.data.history.portfolioValue) - 12, format.len(user.data.history.portfolioValue)) %} {% if i < 0 %}, {% else %} { { user['data']['history']['portfolioValue'][i] } }, {% endif %} {% endfor %}];
+	const chartData = [{% for i in range(format.len(user.data.history.portfolioValue) - 12, format.len(user.data.history.portfolioValue)) %} {% if i < 0 %}, {% else %} {{ user['data']['history']['portfolioValue'][i].value }}, {% endif %} {% endfor %}];
 	const pieLabels = [{% for stock in portfolio['stocks'] %} "{{ stock['ticker']}}", {% endfor %}];
-	const pieData = [{% for stock in portfolio['stocks'] %} {{ stock['totalStake']}}, {% endfor %}];
+	const pieData = [{% for stock in portfolio['stocks'] %} {{ stock['totalStake'] }} * {{ stock['price'] }}, {% endfor %}];
 </script>
 <script src="static/vendor/chart.js/Chart.min.js"></script>
 <script src="static/js/growth-chart.js"></script>

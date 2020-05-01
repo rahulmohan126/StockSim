@@ -182,7 +182,12 @@ def stock():
 
 		data = cache.get(flask.request.args['ticker'])
 		data.refresh()
-		chartData = data.getChartData('y')
+		chartData = {
+			'year': data.getChartData('y'),
+			'month': data.getChartData('mo'),
+			'fiveDay': data.getChartData('5d'),
+			'oneDay': data.getChartData('d')
+		}
 		user = User(flask.session['user'])
 		limits = user.data.portfolio.getLimits(flask.request.args['ticker'],
 											   data.info['regularMarketPrice'])
@@ -266,6 +271,8 @@ def logout():
 
 
 if __name__ == "__main__":
+	updateAllPortfolios()
+	
 	background = BackgroundProcesses(stopEvent, updateAllPortfolios)
 	background.start()
 

@@ -17,7 +17,7 @@ Date collected from Yahoo Finance through the yFinance module.
 5. *Add stop/limit options to buying/selling (v1.2) --- DONE*
 6. *Orders item in nav bar for current open orders (v1.2) --- DONE*
 7. *Global leaderboard (v1.3) --- DONE*
-8. Enable all dropdown menu options (stock growth, portfolio growth, and stock distribution) (v1.4)
+8. *Enable all dropdown menu options (v1.4) --- DONE*
 
 ## Installation
 

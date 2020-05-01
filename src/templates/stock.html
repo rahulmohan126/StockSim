@@ -42,10 +42,10 @@
 					<div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
 						aria-labelledby="dropdownMenuLink">
 						<div class="dropdown-header">Scope:</div>
-						<button class="dropdown-item" onclick="changeUnit('year')">Year</button>
-						<button class="dropdown-item" onclick="changeUnit('month')">Month</button>
-						<button class="dropdown-item" onclick="changeUnit('week')">Week</button>
-						<button class="dropdown-item" onclick="changeUnit('day')">Day</button>
+						<button class="dropdown-item" onclick="refreshChart('year')">Year</button>
+						<button class="dropdown-item" onclick="refreshChart('month')">Month</button>
+						<button class="dropdown-item" onclick="refreshChart('fiveDay')">5D</button>
+						<button class="dropdown-item" onclick="refreshChart('oneDay')">Day</button>
 					</div>
 				</div>
 			</div>
@@ -161,7 +161,12 @@
 
 <script>
 	const ticker = "{{ ticker }}";
-	const chartData = {{ chartData }};
+	const chartData = {
+		year: {{ chartData['year'] }},
+		month: {{ chartData['month'] }},
+		fiveDay: {{ chartData['fiveDay'] }},
+		oneDay: {{ chartData['oneDay'] }}
+	};
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
 <script src="static/vendor/chart.js/Chart.min.js"></script>

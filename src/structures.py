@@ -464,9 +464,11 @@ class StockData:
 		self.lastUpdated = time.time()
 
 	def getChartData(self, unit: str) -> list:
-		unitMap = {'y': '1d', 'm': '1h', 'w': '1h', 'd': '1s'}
+		unitMap = {'y': '1d', 'mo': '1d', '5d': '30m', 'd': '1m'}
 
-		rawData = self.ticker.history(period='1' + unit,
+		p = '1' + unit if unit is not '5d' else unit
+
+		rawData = self.ticker.history(period=p,
 									  interval=unitMap[unit])
 		parsedData = []
 
@@ -476,8 +478,10 @@ class StockData:
 				't': row.name.value / 1_000_000,
 				'y': row['Close']
 			})
+		
+		final = str(parsedData).replace("'", '')
 
-		return str(parsedData).replace("'", '')
+		return final
 
 	def refresh(self):
 		# Only refreshes if it has been 30 seconds since last updated
